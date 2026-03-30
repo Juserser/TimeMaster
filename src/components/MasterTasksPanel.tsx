@@ -48,14 +48,22 @@ const MasterTasksPanel: React.FC = () => {
 
     const startY = e.clientY;
     const startHeight = notepadHeight;
+    const notepadEl = e.currentTarget.parentElement;
 
     const onMouseMove = (moveEvent: MouseEvent) => {
       const deltaY = startY - moveEvent.clientY;
       const newHeight = Math.max(80, Math.min(600, startHeight + deltaY));
-      setNotepadHeight(newHeight);
+      // 드래그 중에는 CSS 변수만 업데이트
+      if (notepadEl) {
+        notepadEl.style.height = `${newHeight}px`;
+      }
     };
 
-    const onMouseUp = () => {
+    const onMouseUp = (moveEvent: MouseEvent) => {
+      const deltaY = startY - moveEvent.clientY;
+      const finalHeight = Math.max(80, Math.min(600, startHeight + deltaY));
+      
+      setNotepadHeight(finalHeight);
       setIsResizing(false);
       window.removeEventListener('mousemove', onMouseMove);
       window.removeEventListener('mouseup', onMouseUp);
@@ -68,7 +76,7 @@ const MasterTasksPanel: React.FC = () => {
   return (
     <section
       className="master-tasks-panel"
-      style={{ width: `${leftWidth}%`, flex: 'none' }}
+      style={{ width: 'var(--left-panel-width)', flex: 'none' }}
       onClick={() => setContextMenu(null)}
     >
       <h2>{t(language, 'masterTasks')}</h2>

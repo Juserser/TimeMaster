@@ -21,9 +21,21 @@ const AppContent: React.FC = () => {
       if (!isResizing || !containerRef.current) return;
       const rect = containerRef.current.getBoundingClientRect();
       const newWidth = ((e.clientX - rect.left) / rect.width) * 100;
-      if (newWidth > 5 && newWidth < 95) setLeftWidth(newWidth);
+      if (newWidth > 5 && newWidth < 95) {
+        // 드래그 중에는 React 상태를 바꾸지 않고 CSS 변수만 즉시 업데이트하여 렉 방지
+        document.documentElement.style.setProperty('--left-panel-width', `${newWidth}%`);
+      }
     };
-    const handleMouseUp = () => setIsResizing(false);
+    const handleMouseUp = (e: MouseEvent) => {
+      if (!isResizing || !containerRef.current) return;
+      
+      const rect = containerRef.current.getBoundingClientRect();
+      const newWidth = ((e.clientX - rect.left) / rect.width) * 100;
+      const finalWidth = Math.max(5, Math.min(95, newWidth));
+      
+      setLeftWidth(finalWidth);
+      setIsResizing(false);
+    };
     if (isResizing) {
       window.addEventListener('mousemove', handleMouseMove);
       window.addEventListener('mouseup', handleMouseUp);

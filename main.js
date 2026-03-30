@@ -114,8 +114,17 @@ function createWindow() {
     },
   });
 
+  let boundsTimer;
   const saveBounds = () => {
-    writeStore('window-bounds', win.getBounds());
+    if (boundsTimer) clearTimeout(boundsTimer);
+    boundsTimer = setTimeout(() => {
+      try {
+        const bounds = win.getBounds();
+        writeStore('window-bounds', bounds);
+      } catch (e) {
+        console.error('Failed to save window bounds:', e);
+      }
+    }, 500); // 500ms 동안 변화가 없으면 저장
   };
 
   win.on('resize', saveBounds);

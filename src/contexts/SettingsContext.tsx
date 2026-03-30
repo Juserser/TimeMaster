@@ -159,20 +159,28 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   useEffect(() => {
     if (!isLoaded || !electronAPI) return;
-    electronAPI.writeStore('grid-interval', interval);
-    electronAPI.writeStore('font-size', fontSize);
-    electronAPI.writeStore('app-title', appTitle);
-    electronAPI.writeStore('left-width', leftWidth);
-    electronAPI.writeStore('app-opacity', opacity);
-    electronAPI.writeStore('show-time-indicator', showTimeIndicator);
-    electronAPI.writeStore('show-time-badge', showTimeBadge);
-    electronAPI.writeStore('show-notepad', showNotepad);
-    electronAPI.writeStore('notepad-height', notepadHeight);
-    electronAPI.writeStore('show-notifications', showNotifications);
-    electronAPI.writeStore('app-theme', theme);
-    electronAPI.writeStore('widget-mode', widgetMode);
-    electronAPI.writeStore('app-language', language);
-    electronAPI.writeStore('performance-mode', performanceMode);
+
+    const timer = setTimeout(() => {
+      electronAPI.writeStore('grid-interval', interval);
+      electronAPI.writeStore('font-size', fontSize);
+      electronAPI.writeStore('app-title', appTitle);
+      electronAPI.writeStore('left-width', leftWidth);
+      electronAPI.writeStore('app-opacity', opacity);
+      electronAPI.writeStore('show-time-indicator', showTimeIndicator);
+      electronAPI.writeStore('show-time-badge', showTimeBadge);
+      electronAPI.writeStore('show-notepad', showNotepad);
+      electronAPI.writeStore('notepad-height', notepadHeight);
+      electronAPI.writeStore('show-notifications', showNotifications);
+      electronAPI.writeStore('app-theme', theme);
+      electronAPI.writeStore('widget-mode', widgetMode);
+      electronAPI.writeStore('app-language', language);
+      electronAPI.writeStore('performance-mode', performanceMode);
+    }, 1000); // 1초 디바운스
+
+    // leftWidth 변경 시 즉시 CSS 변수 업데이트 (리렌더링 없이 레이아웃 반영 위함)
+    document.documentElement.style.setProperty('--left-panel-width', `${leftWidth}%`);
+
+    return () => clearTimeout(timer);
   }, [isLoaded, interval, fontSize, appTitle, leftWidth, opacity, showTimeIndicator, showTimeBadge, showNotepad, notepadHeight, showNotifications, theme, widgetMode, language, performanceMode, electronAPI]);
 
   if (!isLoaded) return null;
