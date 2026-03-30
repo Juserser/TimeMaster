@@ -1,0 +1,62 @@
+{
+  "name": "elon-timebox",
+  "private": true,
+  "version": "0.1.1",
+  "main": "main.js",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "electron:dev": "concurrently \"npm run dev\" \"wait-on http://localhost:5173 && electron .\"",
+    "electron:build": "npm run build && electron-builder --win",
+    "electron:build:mac": "npm run build && electron-builder --mac"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.3",
+    "@vitejs/plugin-react": "^4.3.1",
+    "concurrently": "^8.2.2",
+    "electron": "^31.0.1",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.2.2",
+    "vite": "^5.3.1",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "com.elon.timebox",
+    "productName": "TimeMaster",
+    "directories": {
+      "output": "dist-electron"
+    },
+    "files": [
+      "dist/**/*",
+      "public/**/*",
+      "main.js",
+      "preload.js",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "category": "public.app-category.productivity"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "TimeMaster"
+    }
+  }
+}

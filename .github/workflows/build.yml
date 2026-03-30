@@ -1,0 +1,51 @@
+﻿name: Build and Release
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [windows-latest, macos-latest]
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm install
+
+      - name: Build React App
+        run: npm run build
+
+      - name: Build Electron App
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            npx electron-builder --win --publish never
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            npx electron-builder --mac --publish never
+          fi
+        shell: bash
+
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: TimeMaster-${{ matrix.os }}
+          path: |
+            dist-electron/*.exe
+            dist-electron/*.dmg
+            dist-electron/*.zip

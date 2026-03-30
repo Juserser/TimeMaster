@@ -1,0 +1,97 @@
+.timebox-panel {
+  flex: 1; display: flex; flex-direction: column; position: relative; background: var(--panel-bg);
+  border-radius: 16px; overflow: hidden; padding-right: 15px;
+  border: 1px solid var(--border-glass);
+}
+.content-area { flex: 1; overflow-y: auto; position: relative; }
+.content-area::-webkit-scrollbar { width: 0; }
+.grid-container { position: relative; width: 100%; padding-left: 60px; }
+.grid-row { border-bottom: 1px solid var(--border-glass); position: relative; display: flex; align-items: center; margin-right: 5px; transition: background 0.2s; }
+.grid-row.drag-over { background: var(--block-bg); }
+.grid-row::before { content: attr(data-time); position: absolute; left: -55px; width: 50px; text-align: right; font-weight: 600; color: var(--text-secondary); }
+.grid-row.hour-mark { border-bottom-color: var(--accent-blue); }
+.grid-row.hour-mark::before { color: var(--accent-blue); }
+.grid-row.quarter-mark { border-bottom-color: var(--text-secondary); opacity: 0.6; }
+.grid-row.quarter-mark::before { color: var(--text-secondary); }
+
+/* Time Blocks */
+.time-blocks-layer { position: absolute; top: 0; left: 60px; right: 5px; height: 100%; pointer-events: none; }
+.time-block {
+  position: absolute; left: 0; right: 0; background: var(--block-bg); border-left: 4px solid var(--accent-blue);
+  border-radius: 6px; padding: 0 10px; font-weight: 700; color: var(--text-primary); box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  cursor: grab; pointer-events: auto; display: flex; align-items: center; overflow: visible;
+  transition: background 0.2s, box-shadow 0.2s;
+}
+.time-block:active { cursor: grabbing; }
+.time-block:hover { background: rgba(0, 210, 255, 0.35); }
+
+/* 드래그 중일 때 모든 타임 블록이 드롭 이벤트를 방해하지 않도록 설정 */
+body.dragging-active .time-block {
+  pointer-events: none !important;
+}
+
+.block-resize-handle {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 12px;
+  cursor: ns-resize !important; /* 강제 적용 */
+  z-index: 100 !important; /* 최상단 레이어 */
+  background: transparent;
+  transition: background 0.2s;
+}
+.block-resize-handle.bottom {
+  bottom: 0;
+  transform: translateY(50%); /* 정확히 아래 경계선에 위치 */
+}
+.block-resize-handle.top {
+  top: 0;
+  transform: translateY(-50%); /* 정확히 위 경계선에 위치 */
+}
+.block-resize-handle:hover {
+  background: var(--accent-blue);
+  box-shadow: 0 0 10px var(--accent-glow);
+}
+.block-text { 
+  width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; 
+  position: relative; z-index: 5; 
+  /* pointer-events: none 제거 (클릭 기능 복구) */
+}
+
+/* 핸들에 마우스가 올라가면 블록 전체의 커서를 리사이즈 모양으로 강제 고정 */
+.time-block:has(.block-resize-handle:hover) {
+  cursor: ns-resize !important;
+}
+
+/* Current Time Line */
+.current-time-line {
+  position: absolute; left: -5px; right: 5px; height: 1px;
+  background: linear-gradient(to right, #fff 0%, rgba(255, 255, 255, 0.2) 100%);
+  z-index: 100; pointer-events: none; display: flex; align-items: center; transition: top 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+.current-time-line::before {
+  content: ''; position: absolute; left: 0; width: 8px; height: 8px; background: #fff;
+  border-radius: 50%; box-shadow: 0 0 10px #fff, 0 0 20px rgba(255, 255, 255, 0.5); transform: translateX(-50%); animation: pulse-white 1.5s infinite;
+}
+.current-time-badge {
+  position: absolute; left: -55px; background: rgba(255, 255, 255, 0.2); backdrop-filter: blur(5px);
+  border: 1px solid rgba(255, 255, 255, 0.3); color: #fff; font-size: 10px; font-weight: 900; padding: 1px 5px; border-radius: 4px; transform: translateY(-50%);
+}
+
+/* White Theme Specific Overrides for Time Line */
+.theme-white .current-time-line {
+  background: linear-gradient(to right, var(--accent-blue) 0%, transparent 100%);
+}
+.theme-white .current-time-line::before {
+  background: var(--accent-blue);
+  box-shadow: 0 0 10px var(--accent-blue), 0 0 20px var(--accent-glow);
+  animation: pulse-accent 1.5s infinite;
+}
+.theme-white .current-time-badge {
+  background: var(--accent-blue);
+  border-color: var(--accent-glow);
+  color: #fff;
+}
+
+@keyframes pulse-white { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; } 50% { transform: translateX(-50%) scale(1.4); opacity: 0.7; } }
+@keyframes pulse-accent { 0%, 100% { transform: translateX(-50%) scale(1); opacity: 1; } 50% { transform: translateX(-50%) scale(1.4); opacity: 0.7; } }
