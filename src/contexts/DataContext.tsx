@@ -1,6 +1,8 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { TimeBlock, MasterTask } from '../types';
 
+export type DetailItem = { type: 'task' | 'block'; id: string } | null;
+
 interface DataContextType {
   selectedDate: Date;
   setSelectedDate: (v: Date) => void;
@@ -13,6 +15,10 @@ interface DataContextType {
   setNotepadContent: (v: string) => void;
   formatLocalDate: (date: Date) => string;
   datesWithData: Set<string>;
+  moveTaskToDate: (taskId: string, targetDateKey: string) => Promise<void>;
+  moveIncompleteToTomorrow: () => Promise<void>;
+  selectedDetail: DetailItem;
+  setSelectedDetail: (v: DetailItem) => void;
 }
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
@@ -34,6 +40,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [notepadContent, setNotepadContent] = useState('');
   const [loadedDateKey, setLoadedDateKey] = useState<string | null>(null);
   const [datesWithData, setDatesWithData] = useState<Set<string>>(new Set());
+  const [selectedDetail, setSelectedDetail] = useState<DetailItem>(null);
 
   const electronAPI = (window as any).electronAPI;
 
@@ -112,13 +119,14 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setBlocks(savedBlocks || []);
       setMasterTasks(savedTasks || []);
       setNotepadContent(savedNotepad || '');
-      
+
       await refreshDatesWithData();
       setLoadedDateKey(dateKey);
       setIsLoaded(true);
     };
 
-    setIsLoaded(false); 
+    setIsLoaded(false);
+    setSelectedDetail(null);
     loadData();
   }, [dateKey, electronAPI, refreshDatesWithData]);
 
@@ -140,6 +148,30 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
     electronAPI.writeStore(`notepad-${dateKey}`, notepadContent); 
   }, [notepadContent, dateKey, isLoaded, electronAPI, loadedDateKey]);
 
+  const moveTaskToDate = async (taskId: string, targetDateKey: string) => {
+    const task = masterTasks.find(t => t.id === taskId);
+    if (!task || !electronAPI) return;
+    const targetTasks = (await electronAPI.readStore(`tasks-${targetDateKey}`)) || [];
+    const movedTask = { ...task, id: `moved-${Date.now()}`, completed: false };
+    await electronAPI.writeStore(`tasks-${targetDateKey}`, [...targetTasks, movedTask]);
+    setMasterTasks(masterTasks.filter(t => t.id !== taskId));
+    await refreshDatesWithData();
+  };
+
+  const moveIncompleteToTomorrow = async () => {
+    if (!electronAPI) return;
+    const incomplete = masterTasks.filter(t => !t.completed);
+    if (incomplete.length === 0) return;
+    const tomorrow = new Date(selectedDate);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const tomorrowKey = formatLocalDate(tomorrow);
+    const targetTasks = (await electronAPI.readStore(`tasks-${tomorrowKey}`)) || [];
+    const moved = incomplete.map(t => ({ ...t, id: `moved-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`, completed: false }));
+    await electronAPI.writeStore(`tasks-${tomorrowKey}`, [...targetTasks, ...moved]);
+    setMasterTasks(masterTasks.filter(t => t.completed));
+    await refreshDatesWithData();
+  };
+
   if (!isLoaded) return null;
 
   return (
@@ -147,7 +179,9 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       selectedDate, setSelectedDate, dateKey,
       blocks, setBlocks, masterTasks, setMasterTasks,
       notepadContent, setNotepadContent, formatLocalDate,
-      datesWithData
+      datesWithData,
+      moveTaskToDate, moveIncompleteToTomorrow,
+      selectedDetail, setSelectedDetail,
     }}>
       {children}
     </DataContext.Provider>

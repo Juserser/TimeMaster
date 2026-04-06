@@ -40,6 +40,10 @@ interface SettingsContextType {
   setAlwaysOnTop: (v: boolean) => void;
   clickThrough: boolean;
   setClickThrough: (v: boolean) => void;
+  showGrid: boolean;
+  setShowGrid: (v: boolean) => void;
+  detailMemoHeight: number;
+  setDetailMemoHeight: (v: number) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | undefined>(undefined);
@@ -64,6 +68,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [performanceMode, setPerformanceModeState] = useState<boolean>(false);
   const [alwaysOnTop, setAlwaysOnTopState] = useState<boolean>(false);
   const [clickThrough, setClickThroughState] = useState<boolean>(false);
+  const [showGrid, setShowGridState] = useState<boolean>(true);
+  const [detailMemoHeight, setDetailMemoHeight] = useState<number>(100);
 
   const electronAPI = (window as any).electronAPI;
 
@@ -90,6 +96,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       const savedPerformanceMode = await electronAPI.readStore('performance-mode');
       const savedAlwaysOnTop = await electronAPI.readStore('always-on-top');
       const savedClickThrough = await electronAPI.readStore('click-through');
+      const savedShowGrid = await electronAPI.readStore('show-grid');
+      const savedDetailMemoHeight = await electronAPI.readStore('detail-memo-height');
       const autoLaunchStatus = await electronAPI.getAutoLaunch();
 
       if (savedInterval !== undefined) setIntervalVal(savedInterval);
@@ -107,6 +115,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       if (savedPerformanceMode !== undefined) setPerformanceModeState(savedPerformanceMode);
       if (savedAlwaysOnTop !== undefined) setAlwaysOnTopState(savedAlwaysOnTop);
       if (savedClickThrough !== undefined) setClickThroughState(savedClickThrough);
+      if (savedShowGrid !== undefined) setShowGridState(savedShowGrid);
+      if (savedDetailMemoHeight !== undefined) setDetailMemoHeight(savedDetailMemoHeight);
 
       if (savedWidgetMode !== undefined) {
         setWidgetModeState(savedWidgetMode);
@@ -175,13 +185,15 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       electronAPI.writeStore('widget-mode', widgetMode);
       electronAPI.writeStore('app-language', language);
       electronAPI.writeStore('performance-mode', performanceMode);
+      electronAPI.writeStore('show-grid', showGrid);
+      electronAPI.writeStore('detail-memo-height', detailMemoHeight);
     }, 1000); // 1초 디바운스
 
     // leftWidth 변경 시 즉시 CSS 변수 업데이트 (리렌더링 없이 레이아웃 반영 위함)
     document.documentElement.style.setProperty('--left-panel-width', `${leftWidth}%`);
 
     return () => clearTimeout(timer);
-  }, [isLoaded, interval, fontSize, appTitle, leftWidth, opacity, showTimeIndicator, showTimeBadge, showNotepad, notepadHeight, showNotifications, theme, widgetMode, language, performanceMode, electronAPI]);
+  }, [isLoaded, interval, fontSize, appTitle, leftWidth, opacity, showTimeIndicator, showTimeBadge, showNotepad, notepadHeight, showNotifications, theme, widgetMode, language, performanceMode, showGrid, detailMemoHeight, electronAPI]);
 
   if (!isLoaded) return null;
 
@@ -200,6 +212,8 @@ export const SettingsProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       performanceMode, setPerformanceMode,
       alwaysOnTop, setAlwaysOnTop,
       clickThrough, setClickThrough,
+      showGrid, setShowGrid: setShowGridState,
+      detailMemoHeight, setDetailMemoHeight,
     }}>
       {children}
     </SettingsContext.Provider>

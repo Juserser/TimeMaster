@@ -18,4 +18,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('settings-updated', subscription);
     return () => ipcRenderer.removeListener('settings-updated', subscription);
   },
+  openExternal: (url) => ipcRenderer.invoke('open-external', url),
+  openPath: (filePath) => ipcRenderer.invoke('open-path', filePath),
 });

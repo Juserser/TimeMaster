@@ -13,10 +13,12 @@ const Header: React.FC = () => {
     autoLaunch, setAutoLaunch, widgetMode, setWidgetMode,
     language, setLanguage, performanceMode, setPerformanceMode,
     viewMode, setViewMode, alwaysOnTop, setAlwaysOnTop, clickThrough, setClickThrough,
+    showGrid, setShowGrid,
   } = useSettings();
 
   const {
-    selectedDate, setSelectedDate, dateKey, formatLocalDate, datesWithData
+    selectedDate, setSelectedDate, dateKey, formatLocalDate, datesWithData,
+    moveIncompleteToTomorrow,
   } = useData();
 
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -243,7 +245,18 @@ const Header: React.FC = () => {
 
               <div className="menu-divider"></div>
 
+              {/* Move incomplete to tomorrow */}
+              <button className="menu-item" onClick={() => { moveIncompleteToTomorrow(); setShowMenu(false); }}>
+                {t(language, 'moveIncompleteToTomorrow')}
+              </button>
+
+              <div className="menu-divider"></div>
+
               {/* Toggles */}
+              <button className={`menu-item ${showGrid ? 'active' : ''}`}
+                onClick={() => { setShowGrid(!showGrid); setShowMenu(false); }}>
+                {showGrid ? '✓ ' : ''}{t(language, 'showGrid')}
+              </button>
               <button className={`menu-item ${showNotepad ? 'active' : ''}`}
                 onClick={() => { setShowNotepad(!showNotepad); setShowMenu(false); }}>
                 {showNotepad ? '✓ ' : ''}{t(language, 'showNotepad')}

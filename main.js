@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage } = require('electron');
+const { app, BrowserWindow, ipcMain, Tray, Menu, nativeImage, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
 
@@ -207,6 +207,24 @@ ipcMain.on('set-auto-launch', (event, enabled) => {
 
 ipcMain.handle('save-backup', () => {
   return saveAutoBackup();
+});
+
+ipcMain.handle('open-external', (event, url) => {
+  shell.openExternal(url);
+});
+
+ipcMain.handle('open-path', async (event, filePath) => {
+  try {
+    const result = await shell.openPath(filePath);
+    if (result) {
+      console.error('shell.openPath error:', result);
+      return { success: false, error: result };
+    }
+    return { success: true };
+  } catch (e) {
+    console.error('open-path exception:', e);
+    return { success: false, error: String(e) };
+  }
 });
 
 ipcMain.on('set-always-on-top', (event, enabled) => {

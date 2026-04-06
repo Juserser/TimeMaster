@@ -15,12 +15,21 @@ interface BlockContextMenu {
   y: number;
 }
 
+const THEME_BG_RGB: Record<string, string> = {
+  'theme-blue':    '15, 20, 30',
+  'theme-white':   '235, 238, 242',
+  'theme-rose':    '25, 15, 20',
+  'theme-emerald': '10, 25, 20',
+  'theme-amber':   '20, 18, 10',
+  'theme-purple':  '20, 10, 30',
+};
+
 const TimeboxPanel: React.FC<TimeboxPanelProps> = ({ contentAreaRef }) => {
   const {
-    interval, fontSize, showTimeIndicator, showTimeBadge, showNotifications, language
+    interval, fontSize, showTimeIndicator, showTimeBadge, showNotifications, language, showGrid, theme
   } = useSettings();
   const {
-    blocks, setBlocks, dateKey, formatLocalDate
+    blocks, setBlocks, dateKey, formatLocalDate, setSelectedDetail, masterTasks
   } = useData();
 
   const [showModal, setShowModal] = useState(false);
@@ -255,8 +264,8 @@ const TimeboxPanel: React.FC<TimeboxPanelProps> = ({ contentAreaRef }) => {
             isDragScrolled.current = false;
           }}
         >
-          <div 
-            className="grid-container" 
+          <div
+            className={`grid-container${showGrid ? '' : ' hide-grid'}`}
             ref={gridContainerRef}
             onDragOver={(e) => {
               e.preventDefault();
@@ -276,6 +285,7 @@ const TimeboxPanel: React.FC<TimeboxPanelProps> = ({ contentAreaRef }) => {
               const blockIdFromData = e.dataTransfer.getData('blockId');
               const actualBlockId = blockIdFromData || draggingBlockIdRef.current;
               const taskText = e.dataTransfer.getData('text/plain');
+              const taskId = e.dataTransfer.getData('taskId');
               
               const targetId = actualBlockId;
 
@@ -294,11 +304,14 @@ const TimeboxPanel: React.FC<TimeboxPanelProps> = ({ contentAreaRef }) => {
                   return prevBlocks.map((b: TimeBlock) => b.id === targetId ? { ...b, startTime: mins } : b);
                 });
               } else if (taskText) {
+                const sourceTask = taskId ? masterTasks.find(t => t.id === taskId) : null;
                 setBlocks((prevBlocks: TimeBlock[]) => [...prevBlocks, {
                   id: Date.now().toString(),
                   startTime: mins,
                   duration: interval,
                   title: taskText,
+                  ...(sourceTask?.memo ? { memo: sourceTask.memo } : {}),
+                  ...(sourceTask?.links?.length ? { links: sourceTask.links } : {}),
                 }]);
               }
               
@@ -327,10 +340,11 @@ const TimeboxPanel: React.FC<TimeboxPanelProps> = ({ contentAreaRef }) => {
                   fontSize: `${fontSize - 1}px`,
                 };
                 if (block.color) {
-                  blockStyle.backgroundColor = `${block.color}cc`;
-                  blockStyle.borderColor = block.color;
-                  blockStyle.borderWidth = '1px';
-                  blockStyle.borderStyle = 'solid';
+                  const bgRgb = THEME_BG_RGB[theme] || '15, 20, 30';
+                  blockStyle.background = showGrid
+                    ? `${block.color}33`
+                    : `linear-gradient(${block.color}33, ${block.color}33), rgb(${bgRgb})`;
+                  blockStyle.borderLeftColor = block.color;
                 }
                 return (
                   <div
@@ -358,17 +372,18 @@ const TimeboxPanel: React.FC<TimeboxPanelProps> = ({ contentAreaRef }) => {
                       e.stopPropagation();
                       setBlockContextMenu({ blockId: block.id, x: e.clientX, y: e.clientY });
                     }}
+                    onClick={(e) => {
+                      const target = e.target as HTMLElement;
+                      if (target.classList.contains('block-resize-handle')) return;
+                      if (draggingBlockIdRef.current) return;
+                      setSelectedDetail({ type: 'block', id: block.id });
+                    }}
                     title={`${block.title} (${block.duration}${t(language, 'min')})`}
                     style={blockStyle}
                   >
                     <span
                       className="block-text"
                       style={{ lineHeight: `${blockHeight - 1}px` }}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setModalData({ id: block.id, title: block.title, duration: block.duration, startTime: block.startTime });
-                        setShowModal(true);
-                      }}
                     >{block.title}</span>
                     <div
                       className="block-resize-handle top"
@@ -414,6 +429,16 @@ const TimeboxPanel: React.FC<TimeboxPanelProps> = ({ contentAreaRef }) => {
           style={{ position: 'fixed', top: blockContextMenu.y, left: blockContextMenu.x, zIndex: 3000 }}
           onClick={(e) => e.stopPropagation()}
         >
+          <button className="context-menu-action" onClick={() => {
+            const b = blocks.find(b => b.id === blockContextMenu.blockId);
+            if (b) { setModalData({ id: b.id, title: b.title, duration: b.duration, startTime: b.startTime }); setShowModal(true); }
+            setBlockContextMenu(null);
+          }}>{t(language, 'editBlock')}</button>
+          <button className="context-menu-action" style={{ color: '#ff4d4d' }} onClick={() => {
+            handleDeleteBlock(blockContextMenu.blockId);
+            setBlockContextMenu(null);
+          }}>{language === 'ko' ? '삭제' : 'Delete'}</button>
+          <div className="context-menu-divider" />
           <div className="context-menu-title">{t(language, 'setColor')}</div>
           <div className="color-palette">
             {COLOR_PALETTE.map(({ color, labelKey }) => (
